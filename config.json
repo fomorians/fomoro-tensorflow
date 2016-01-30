@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "file": "models/convnet.pb",
   "options": {
+
     "datasets": {
       "mnist": "0.0.1"
     },
@@ -11,12 +12,24 @@
     "checkpoint_interval": 100,
     "batch_size": 50,
 
-    "train_feed_dict": { "x": "x", "y": "y_" },
-    "validation_feed_dict": { "x": "x", "y": "y_" },
-    "test_feed_dict": { "x": "x", "y": "y_" },
+    "train_feed_dict": {
+      "x": "<-x",
+      "y_": "<-y",
+      "keep_prob": 0.5
+    },
+    "validation_feed_dict": {
+      "x": "<-x",
+      "y_": "<-y",
+      "keep_prob": 1.0
+    },
+    "test_feed_dict": {
+      "x": "<-x",
+      "y_": "<-y",
+      "keep_prob": 1.0
+    },
 
-    "train_ops": { "train": "train_step" },
-    "validation_ops": { "cost": "accuracy" },
-    "test_ops": { "cost": "accuracy" }
+    "train_ops": { "train<-": "train_step" },
+    "validation_ops": { "cost<-": "accuracy" },
+    "test_ops": { "cost<-": "accuracy" }
   }
 }
