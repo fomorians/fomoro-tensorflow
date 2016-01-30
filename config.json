@@ -1,0 +1,22 @@
+{
+  "name": "convnet",
+  "version": "0.0.1",
+  "file": "models/convnet.pb",
+  "options": {
+    "datasets": {
+      "mnist": "0.0.1"
+    },
+
+    "epochs": 20000,
+    "checkpoint_interval": 100,
+    "batch_size": 50,
+
+    "train_feed_dict": { "x": "x", "y": "y_" },
+    "validation_feed_dict": { "x": "x", "y": "y_" },
+    "test_feed_dict": { "x": "x", "y": "y_" },
+
+    "train_ops": { "train": "train_step" },
+    "validation_ops": { "cost": "accuracy" },
+    "test_ops": { "cost": "accuracy" }
+  }
+}
