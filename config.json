@@ -8,7 +8,7 @@
       "mnist": "0.0.1"
     },
 
-    "epochs": 20000,
+    "epochs": 10000,
     "checkpoint_interval": 100,
     "batch_size": 50,
 
