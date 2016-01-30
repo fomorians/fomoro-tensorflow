@@ -7,14 +7,14 @@ def bias_variable(shape):
   return tf.Variable(tf.constant(0.1, shape=shape))
 
 def conv2d(x, W):
-  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding="SAME")
 
 def max_pool_2x2(x):
-  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
 with tf.Graph().as_default(), tf.Session() as sess:
-    x = tf.placeholder("float", shape=[None, 784], name='x')
-    y_ = tf.placeholder("float", shape=[None, 10], name='y_')
+    x = tf.placeholder("float", shape=[None, 784], name="x")
+    y_ = tf.placeholder("float", shape=[None, 10], name="y_")
 
     # reshape input
     x_image = tf.reshape(x, [-1, 28, 28, 1])
@@ -38,7 +38,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     # dropout
-    keep_prob = tf.placeholder("float")
+    keep_prob = tf.placeholder("float", name="keep_prob")
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
     # softmax output
@@ -48,12 +48,12 @@ with tf.Graph().as_default(), tf.Session() as sess:
 
     # define training and accuracy operations
     cross_entropy = -tf.reduce_sum(y_ * tf.log(y_softmax))
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, name='train_step')
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, name="train_step")
     correct_prediction = tf.equal(tf.argmax(y_softmax, 1), tf.argmax(y_, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name='accuracy')
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name="accuracy")
 
     # initialize our variables
     sess.run(tf.initialize_all_variables())
 
     # save the graph definition as a protobuf file
-    tf.train.write_graph(sess.graph_def, 'models/', 'convnet.pb', as_text=False)
+    tf.train.write_graph(sess.graph_def, "models/", "convnet.pb", as_text=False)
