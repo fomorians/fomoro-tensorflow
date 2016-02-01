@@ -1,11 +1,11 @@
 {
-  "name": "",
+  "name": "convnet",
   "version": "0.0.1",
   "file": "models/convnet.pb",
   "options": {
 
     "datasets": {
-      "mnist": "0.0.1"
+      "fomoro/mnist": "0.0.1"
     },
 
     "epochs": 10000,
