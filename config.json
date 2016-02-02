@@ -9,7 +9,7 @@
     },
 
     "epochs": 10000,
-    "checkpoint_interval": 100,
+    "checkpoint_interval": 1000,
     "batch_size": 50,
 
     "train_feed_dict": {
