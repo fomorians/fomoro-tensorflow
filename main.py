@@ -19,7 +19,7 @@ if FLAGS.train or FLAGS.test:
 if FLAGS.kaggle:
     # TODO: wget https://www.kaggle.com/c/digit-recognizer/download/train.csv
     # TODO: wget https://www.kaggle.com/c/digit-recognizer/download/test.csv
-    kaggle_test = pd.read_csv('mnist/test.csv', sep=',')
+    kaggle_test = pd.read_csv('test.csv', sep=',')
 
 def weight_variable(shape):
   return tf.Variable(tf.truncated_normal(shape, stddev=0.1))
