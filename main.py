@@ -34,8 +34,8 @@ def max_pool_2x2(x):
   return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 with tf.Graph().as_default(), tf.Session() as sess:
-    x = tf.placeholder("float", shape=[None, 784], name='x')
-    y_ = tf.placeholder("float", shape=[None, 10], name='y_')
+    x = tf.placeholder('float', shape=[None, 784], name='x')
+    y_ = tf.placeholder('float', shape=[None, 10], name='y_')
 
     # reshape input
     x_image = tf.reshape(x, [-1, 28, 28, 1])
@@ -59,7 +59,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     # dropout
-    keep_prob = tf.placeholder("float")
+    keep_prob = tf.placeholder('float', name='keep_prob')
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
     # softmax output
@@ -71,7 +71,10 @@ with tf.Graph().as_default(), tf.Session() as sess:
     cross_entropy = -tf.reduce_sum(y_ * tf.log(y_softmax))
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, name='train_step')
     correct_prediction = tf.equal(tf.argmax(y_softmax, 1), tf.argmax(y_, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name='accuracy')
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'), name='accuracy')
+    accuracy_summary = tf.scalar_summary('accuracy', accuracy)
+
+    merged_summaries = tf.merge_all_summaries()
 
     if FLAGS.test:
         # create a saver instance to restore from the checkpoint
@@ -89,16 +92,19 @@ with tf.Graph().as_default(), tf.Session() as sess:
         saver.restore(sess, 'checkpoints/latest.ckpt')
 
     if FLAGS.train:
+        summary_writer = tf.train.SummaryWriter('logs/', sess.graph_def)
+
         for i in range(20000):
           batch_xs, batch_ys = mnist.train.next_batch(50)
 
           if i % 100 == 0:
-            validation_accuracy = sess.run(accuracy, feed_dict={
+            validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
                 x: mnist.validation.images,
                 y_: mnist.validation.labels,
                 keep_prob: 1.0
             })
-            print("step %d, training accuracy %g" % (i, validation_accuracy))
+            summary_writer.add_summary(summary, i)
+            print('step %d, training accuracy %g' % (i, validation_accuracy))
 
           sess.run(train_step, feed_dict={
             x: batch_xs,
@@ -112,7 +118,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
             y_: mnist.test.labels,
             keep_prob: 1.0
         })
-        print("test accuracy %g" % test_accuracy)
+        print('test accuracy %g' % test_accuracy)
 
     if FLAGS.kaggle:
         # gather predictions on kaggle test set
