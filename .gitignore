@@ -1,6 +1,7 @@
 .DS_Store
 .env/
 checkpoints/
+logs/
 mnist/
 *.pyc
 results.csv
