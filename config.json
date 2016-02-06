@@ -9,7 +9,7 @@
     },
 
     "epochs": 10000,
-    "checkpoint_interval": 1000,
+    "checkpoint_interval": 100,
     "batch_size": 50,
 
     "train_feed_dict": {
@@ -29,7 +29,7 @@
     },
 
     "train_ops": { "train<-": "train_step" },
-    "validation_ops": { "cost<-": "accuracy" },
+    "validation_ops": { "cost<-": "accuracy", "summary<-": "MergeSummary/MergeSummary" },
     "test_ops": { "cost<-": "accuracy" }
   }
 }
