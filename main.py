@@ -95,22 +95,24 @@ with tf.Graph().as_default(), tf.Session() as sess:
         summary_writer = tf.train.SummaryWriter('logs/', sess.graph_def)
 
         for i in range(20000):
-          batch_xs, batch_ys = mnist.train.next_batch(50)
+            batch_xs, batch_ys = mnist.train.next_batch(50)
 
-          if i % 100 == 0:
-            validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
-                x: mnist.validation.images,
-                y_: mnist.validation.labels,
-                keep_prob: 1.0
+            if i % 100 == 0:
+                validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
+                    x: mnist.validation.images,
+                    y_: mnist.validation.labels,
+                    keep_prob: 1.0
+                })
+                summary_writer.add_summary(summary, i)
+                print('step %d, training accuracy %g' % (i, validation_accuracy))
+
+            sess.run(train_step, feed_dict={
+                x: batch_xs,
+                y_: batch_ys,
+                keep_prob: 0.5
             })
-            summary_writer.add_summary(summary, i)
-            print('step %d, training accuracy %g' % (i, validation_accuracy))
 
-          sess.run(train_step, feed_dict={
-            x: batch_xs,
-            y_: batch_ys,
-            keep_prob: 0.5
-        })
+        summary_writer.close()
 
     if FLAGS.test:
         test_accuracy = sess.run(accuracy, feed_dict={
