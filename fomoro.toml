@@ -1,0 +1,5 @@
+name = "convnet"
+repo = "https://github.com/fomorians/fomoro-starter.git"
+
+[datasets]
+"fomoro/mnist" = "0.0.1"
