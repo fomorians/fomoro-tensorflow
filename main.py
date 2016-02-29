@@ -1,4 +1,5 @@
 from __future__ import print_function
+print('MAIN...')
 
 import tensorflow as tf
 import numpy as np
@@ -13,6 +14,7 @@ flags.DEFINE_boolean('save', False, 'If true, save the model graph.')
 flags.DEFINE_boolean('kaggle', False, 'If true, write predictions against the kaggle test set.')
 
 if FLAGS.train or FLAGS.test:
+    print('LOADING MNIST...')
     mnist = input_data.read_data_sets('mnist', one_hot=True)
 
 if FLAGS.kaggle:
