@@ -7,7 +7,7 @@ import input_data
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
-flags.DEFINE_boolean('train', False, 'If true, train the model locally.')
+flags.DEFINE_boolean('train', True, 'If true, train the model locally.')
 flags.DEFINE_boolean('test', False, 'If true, test the model locally.')
 flags.DEFINE_boolean('save', False, 'If true, save the model graph.')
 flags.DEFINE_boolean('kaggle', False, 'If true, write predictions against the kaggle test set.')
