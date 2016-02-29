@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import tensorflow as tf
-import pandas as pd
 import numpy as np
 import input_data
 
@@ -123,6 +122,8 @@ with tf.Graph().as_default(), tf.Session() as sess:
         print('test accuracy %g' % test_accuracy)
 
     if FLAGS.kaggle:
+        import pandas as pd
+
         # gather predictions on kaggle test set
         predictions = sess.run(tf.argmax(y_softmax, 1), feed_dict={
             x: kaggle_test.values,
