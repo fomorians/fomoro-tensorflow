@@ -1,6 +1,6 @@
 from __future__ import print_function
-print('MAIN...')
 
+import os
 import tensorflow as tf
 import numpy as np
 import input_data
@@ -8,19 +8,9 @@ import input_data
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
-flags.DEFINE_boolean('train', True, 'If true, train the model locally.')
-flags.DEFINE_boolean('test', False, 'If true, test the model locally.')
-flags.DEFINE_boolean('save', False, 'If true, save the model graph.')
-flags.DEFINE_boolean('kaggle', False, 'If true, write predictions against the kaggle test set.')
+flags.DEFINE_boolean('restore', False, 'If true, restore the model from a checkpoint.')
 
-if FLAGS.train or FLAGS.test:
-    print('LOADING MNIST...')
-    mnist = input_data.read_data_sets('mnist', one_hot=True)
-
-if FLAGS.kaggle:
-    # TODO: wget https://www.kaggle.com/c/digit-recognizer/download/train.csv
-    # TODO: wget https://www.kaggle.com/c/digit-recognizer/download/test.csv
-    kaggle_test = pd.read_csv('test.csv', sep=',')
+mnist = input_data.read_data_sets('mnist', one_hot=True)
 
 def weight_variable(shape):
   return tf.Variable(tf.truncated_normal(shape, stddev=0.1))
@@ -77,62 +67,51 @@ with tf.Graph().as_default(), tf.Session() as sess:
 
     merged_summaries = tf.merge_all_summaries()
 
-    if FLAGS.test:
-        # create a saver instance to restore from the checkpoint
-        saver = tf.train.Saver()
+    # create a saver instance to restore from the checkpoint
+    saver = tf.train.Saver()
 
     # initialize our variables
     sess.run(tf.initialize_all_variables())
 
-    if FLAGS.save:
-        # save the graph definition as a protobuf file
-        tf.train.write_graph(sess.graph_def, 'models/', 'convnet.pb', as_text=False)
+    # save the graph definition as a protobuf file
+    tf.train.write_graph(sess.graph_def, 'models/', 'convnet.pb', as_text=False)
 
-    if FLAGS.test:
-        # restore variables
-        saver.restore(sess, 'checkpoints/latest.ckpt')
+    # restore variables
+    if FLAGS.restore:
+        checkpoint_path = tf.train.latest_checkpoint('checkpoints/')
+        if checkpoint_path:
+            checkpoint_path = os.path.join('checkpoints/', os.path.basename(checkpoint_path))
+            saver.restore(sess, checkpoint_path)
 
-    if FLAGS.train:
-        summary_writer = tf.train.SummaryWriter('logs/', sess.graph_def)
+    summary_writer = tf.train.SummaryWriter('logs/', sess.graph_def)
 
-        for i in range(20000):
-            batch_xs, batch_ys = mnist.train.next_batch(50)
+    num_steps = 2000
+    checkpoint_interval = 100
 
-            if i % 100 == 0:
-                validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
-                    x: mnist.validation.images,
-                    y_: mnist.validation.labels,
-                    keep_prob: 1.0
-                })
-                summary_writer.add_summary(summary, i)
-                print('step %d, training accuracy %g' % (i, validation_accuracy))
+    for step in range(num_steps):
+        batch_xs, batch_ys = mnist.train.next_batch(50)
 
-            sess.run(train_step, feed_dict={
-                x: batch_xs,
-                y_: batch_ys,
-                keep_prob: 0.5
+        if step % checkpoint_interval == 0:
+            validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
+                x: mnist.validation.images,
+                y_: mnist.validation.labels,
+                keep_prob: 1.0
             })
+            summary_writer.add_summary(summary, step)
+            saver.save(sess, 'checkpoints/checkpoint', global_step=step)
+            print('step %d, training accuracy %g' % (step, validation_accuracy))
 
-        summary_writer.close()
-
-    if FLAGS.test:
-        test_accuracy = sess.run(accuracy, feed_dict={
-            x: mnist.test.images,
-            y_: mnist.test.labels,
-            keep_prob: 1.0
-        })
-        print('test accuracy %g' % test_accuracy)
-
-    if FLAGS.kaggle:
-        import pandas as pd
-
-        # gather predictions on kaggle test set
-        predictions = sess.run(tf.argmax(y_softmax, 1), feed_dict={
-            x: kaggle_test.values,
-            keep_prob: 1.0
+        sess.run(train_step, feed_dict={
+            x: batch_xs,
+            y_: batch_ys,
+            keep_prob: 0.5
         })
 
-        # save predictions as csv
-        index = np.arange(1, kaggle_test.shape[0] + 1)
-        results = pd.DataFrame(predictions, index=index)
-        results.to_csv('results.csv', header=['Label'], index=True, index_label='ImageId')
+    summary_writer.close()
+
+    test_accuracy = sess.run(accuracy, feed_dict={
+        x: mnist.test.images,
+        y_: mnist.test.labels,
+        keep_prob: 1.0
+    })
+    print('test accuracy %g' % test_accuracy)
