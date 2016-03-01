@@ -89,6 +89,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
     checkpoint_interval = 100
 
     for step in range(num_steps):
+        print('step %d' % step)
         batch_xs, batch_ys = mnist.train.next_batch(50)
 
         if step % checkpoint_interval == 0:
