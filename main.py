@@ -5,12 +5,29 @@ import tensorflow as tf
 import numpy as np
 import input_data
 
+from fuel.datasets import H5PYDataset
+from fuel.schemes import SequentialScheme
+from fuel.streams import DataStream
+
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 flags.DEFINE_boolean('restore', False, 'If true, restore the model from a checkpoint.')
 
-mnist = input_data.read_data_sets('mnist', one_hot=True)
+train_set = H5PYDataset('datasets/mnist/mnist.hdf5', which_sets=['train'], subset=slice(0, 50000), load_in_memory=True)
+valid_set = H5PYDataset('datasets/mnist/mnist.hdf5', which_sets=['train'], subset=slice(50000, 60000), load_in_memory=True)
+test_set = H5PYDataset('datasets/mnist/mnist.hdf5', which_sets=['test'], load_in_memory=True)
+
+batch_size = 50
+
+train_scheme = SequentialScheme(examples=train_set.num_examples, batch_size=batch_size)
+train_stream = DataStream(dataset=train_set, iteration_scheme=train_scheme)
+
+valid_scheme = SequentialScheme(examples=valid_set.num_examples, batch_size=valid_set.num_examples)
+valid_stream = DataStream(dataset=valid_set, iteration_scheme=valid_scheme)
+
+test_scheme = SequentialScheme(examples=test_set.num_examples, batch_size=test_set.num_examples)
+test_stream = DataStream(dataset=test_set, iteration_scheme=test_scheme)
 
 def weight_variable(shape):
   return tf.Variable(tf.truncated_normal(shape, stddev=0.1))
@@ -85,17 +102,16 @@ with tf.Graph().as_default(), tf.Session() as sess:
 
     summary_writer = tf.train.SummaryWriter('logs/', sess.graph_def)
 
-    num_steps = 2000
+    num_epochs = 5
     checkpoint_interval = 100
 
-    for step in range(num_steps):
-        print('step %d' % step)
-        batch_xs, batch_ys = mnist.train.next_batch(50)
-
+    step = 0
+    for batch_xs, batch_ys in train_stream.get_epoch_iterator():
         if step % checkpoint_interval == 0:
+            valid_xs, valid_ys = next(valid_stream.get_epoch_iterator())
             validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
-                x: mnist.validation.images,
-                y_: mnist.validation.labels,
+                x: valid_xs,
+                y_: valid_ys,
                 keep_prob: 1.0
             })
             summary_writer.add_summary(summary, step)
@@ -108,11 +124,14 @@ with tf.Graph().as_default(), tf.Session() as sess:
             keep_prob: 0.5
         })
 
+        step += 1
+
     summary_writer.close()
 
+    test_xs, test_ys = next(test_stream.get_epoch_iterator())
     test_accuracy = sess.run(accuracy, feed_dict={
-        x: mnist.test.images,
-        y_: mnist.test.labels,
+        x: test_xs,
+        y_: test_ys,
         keep_prob: 1.0
     })
     print('test accuracy %g' % test_accuracy)
