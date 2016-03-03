@@ -12,11 +12,17 @@ from fuel.streams import DataStream
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
-flags.DEFINE_boolean('restore', False, 'If true, restore the model from a checkpoint.')
+flags.DEFINE_boolean('train', True, 'If true, restore the model from a checkpoint.')
+flags.DEFINE_boolean('restore', False, 'If true, train the model.')
 
-train_set = H5PYDataset('datasets/mnist/mnist.hdf5', which_sets=['train'], subset=slice(0, 50000), load_in_memory=True)
-valid_set = H5PYDataset('datasets/mnist/mnist.hdf5', which_sets=['train'], subset=slice(50000, 60000), load_in_memory=True)
-test_set = H5PYDataset('datasets/mnist/mnist.hdf5', which_sets=['test'], load_in_memory=True)
+dataset_path = os.environ.get('DATASET_PATH', 'datasets/mnist/mnist.hdf5')
+model_path = os.environ.get('MODEL_PATH', 'models/convnet.pb')
+checkpoint_path = os.environ.get('CHECKPOINT_PATH', 'checkpoints/')
+summary_path = os.environ.get('SUMMARY_PATH', 'logs/')
+
+train_set = H5PYDataset(dataset_path, which_sets=['train'], subset=slice(0, 50000), load_in_memory=True)
+valid_set = H5PYDataset(dataset_path, which_sets=['train'], subset=slice(50000, 60000), load_in_memory=True)
+test_set = H5PYDataset(dataset_path, which_sets=['test'], load_in_memory=True)
 
 batch_size = 50
 
@@ -91,42 +97,42 @@ with tf.Graph().as_default(), tf.Session() as sess:
     sess.run(tf.initialize_all_variables())
 
     # save the graph definition as a protobuf file
-    tf.train.write_graph(sess.graph_def, 'models/', 'convnet.pb', as_text=False)
+    tf.train.write_graph(sess.graph_def, os.path.dirname(model_path), os.path.basename(model_path), as_text=False)
 
     # restore variables
     if FLAGS.restore:
-        checkpoint_path = tf.train.latest_checkpoint('checkpoints/')
-        if checkpoint_path:
-            checkpoint_path = os.path.join('checkpoints/', os.path.basename(checkpoint_path))
-            saver.restore(sess, checkpoint_path)
+        latest_checkpoint_path = tf.train.latest_checkpoint(checkpoint_path)
+        if latest_checkpoint_path:
+            saver.restore(sess, latest_checkpoint_path)
 
-    summary_writer = tf.train.SummaryWriter('logs/', sess.graph_def)
+    if FLAGS.train:
+        summary_writer = tf.train.SummaryWriter(summary_path, sess.graph_def)
 
-    num_epochs = 5
-    checkpoint_interval = 100
+        num_epochs = 5
+        checkpoint_interval = 100
 
-    step = 0
-    for batch_xs, batch_ys in train_stream.get_epoch_iterator():
-        if step % checkpoint_interval == 0:
-            valid_xs, valid_ys = next(valid_stream.get_epoch_iterator())
-            validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
-                x: valid_xs,
-                y_: valid_ys,
-                keep_prob: 1.0
+        step = 0
+        for batch_xs, batch_ys in train_stream.get_epoch_iterator():
+            if step % checkpoint_interval == 0:
+                valid_xs, valid_ys = next(valid_stream.get_epoch_iterator())
+                validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
+                    x: valid_xs,
+                    y_: valid_ys,
+                    keep_prob: 1.0
+                })
+                summary_writer.add_summary(summary, step)
+                saver.save(sess, checkpoint_path + 'checkpoint', global_step=step)
+                print('step %d, training accuracy %g' % (step, validation_accuracy))
+
+            sess.run(train_step, feed_dict={
+                x: batch_xs,
+                y_: batch_ys,
+                keep_prob: 0.5
             })
-            summary_writer.add_summary(summary, step)
-            saver.save(sess, 'checkpoints/checkpoint', global_step=step)
-            print('step %d, training accuracy %g' % (step, validation_accuracy))
 
-        sess.run(train_step, feed_dict={
-            x: batch_xs,
-            y_: batch_ys,
-            keep_prob: 0.5
-        })
+            step += 1
 
-        step += 1
-
-    summary_writer.close()
+        summary_writer.close()
 
     test_xs, test_ys = next(test_stream.get_epoch_iterator())
     test_accuracy = sess.run(accuracy, feed_dict={
