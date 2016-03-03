@@ -1,4 +1,4 @@
 numpy==1.10.4
 six==1.10.0
--e git+git://github.com/mila-udem/fuel.git@stable
+-e git+git://github.com/mila-udem/fuel.git@stable#egg=fuel
 https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp27-none-linux_x86_64.whl
