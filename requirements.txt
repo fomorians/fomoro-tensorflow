@@ -3,10 +3,7 @@ pyzmq==15.2.0
 protobuf==3.0.0b2
 h5py==2.5.0
 six==1.10.0
-numpy==1.10.4
 
 --allow-external fuel
 --allow-unverified fuel
 git+https://github.com/mila-udem/fuel#egg=fuel
-
-https://storage.googleapis.com/tensorflow/mac/tensorflow-0.7.1-cp27-none-any.whl
