@@ -16,7 +16,7 @@ flags.DEFINE_boolean('train', True, 'If true, restore the model from a checkpoin
 flags.DEFINE_boolean('restore', False, 'If true, train the model.')
 
 dataset_path = os.environ.get('DATASET_PATH', 'datasets/mnist/mnist.hdf5')
-model_path = os.environ.get('MODEL_PATH', 'models/convnet.pb')
+model_path = os.environ.get('MODEL_PATH', 'models/')
 checkpoint_path = os.environ.get('CHECKPOINT_PATH', 'checkpoints/')
 summary_path = os.environ.get('SUMMARY_PATH', 'logs/')
 
@@ -97,7 +97,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
     sess.run(tf.initialize_all_variables())
 
     # save the graph definition as a protobuf file
-    tf.train.write_graph(sess.graph_def, os.path.dirname(model_path), os.path.basename(model_path), as_text=False)
+    tf.train.write_graph(sess.graph_def, model_path, 'convnet.pb', as_text=False)
 
     # restore variables
     if FLAGS.restore:
