@@ -1,13 +1,13 @@
 from __future__ import print_function
 
 import os
-import tensorflow as tf
 import numpy as np
-import input_data
 
 from fuel.datasets import H5PYDataset
 from fuel.schemes import SequentialScheme
 from fuel.streams import DataStream
+
+import tensorflow as tf
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
