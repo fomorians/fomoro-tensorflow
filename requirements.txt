@@ -1,7 +1,7 @@
 Cython==0.23.4
-h5py==2.5.0
-numexpr==2.5
 numpy==1.10.4
+numexpr==2.5
+h5py==2.5.0
 picklable-itertools==0.1.1
 Pillow==3.1.1
 progressbar2==3.6.2
