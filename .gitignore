@@ -1,7 +1,7 @@
 .DS_Store
 .env/
-checkpoints/
-logs/
+checkpoints/*
+logs/*
+models/*
 mnist/
 *.pyc
-results.csv

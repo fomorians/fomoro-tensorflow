@@ -1,39 +1,25 @@
 from __future__ import print_function
 
 import os
-import numpy as np
-
-from fuel.datasets import H5PYDataset
-from fuel.schemes import SequentialScheme
-from fuel.streams import DataStream
-
 import tensorflow as tf
+import numpy as np
+import input_data
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
+# define flags (note that Fomoro will not pass any flags by default)
 flags.DEFINE_boolean('train', True, 'If true, restore the model from a checkpoint.')
 flags.DEFINE_boolean('restore', False, 'If true, train the model.')
 
-dataset_path = os.environ.get('DATASET_PATH', 'datasets/mnist/mnist.hdf5')
+# define artifact directories where results from the session can be saved
 model_path = os.environ.get('MODEL_PATH', 'models/')
 checkpoint_path = os.environ.get('CHECKPOINT_PATH', 'checkpoints/')
 summary_path = os.environ.get('SUMMARY_PATH', 'logs/')
 
-train_set = H5PYDataset(dataset_path, which_sets=['train'], subset=slice(0, 50000), load_in_memory=True)
-valid_set = H5PYDataset(dataset_path, which_sets=['train'], subset=slice(50000, 60000), load_in_memory=True)
-test_set = H5PYDataset(dataset_path, which_sets=['test'], load_in_memory=True)
+mnist = input_data.read_data_sets('mnist', one_hot=True)
 
 batch_size = 50
-
-train_scheme = SequentialScheme(examples=train_set.num_examples, batch_size=batch_size)
-train_stream = DataStream(dataset=train_set, iteration_scheme=train_scheme)
-
-valid_scheme = SequentialScheme(examples=valid_set.num_examples, batch_size=valid_set.num_examples)
-valid_stream = DataStream(dataset=valid_set, iteration_scheme=valid_scheme)
-
-test_scheme = SequentialScheme(examples=test_set.num_examples, batch_size=test_set.num_examples)
-test_stream = DataStream(dataset=test_set, iteration_scheme=test_scheme)
 
 def weight_variable(shape):
   return tf.Variable(tf.truncated_normal(shape, stddev=0.1))
@@ -108,16 +94,16 @@ with tf.Graph().as_default(), tf.Session() as sess:
     if FLAGS.train:
         summary_writer = tf.train.SummaryWriter(summary_path, sess.graph_def)
 
-        num_epochs = 5
+        num_steps = 20000
         checkpoint_interval = 100
 
         step = 0
-        for batch_xs, batch_ys in train_stream.get_epoch_iterator():
+        for i in range(num_steps):
+            batch_xs, batch_ys = mnist.train.next_batch(50)
             if step % checkpoint_interval == 0:
-                valid_xs, valid_ys = next(valid_stream.get_epoch_iterator())
                 validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
-                    x: valid_xs,
-                    y_: valid_ys,
+                    x: mnist.validation.images,
+                    y_: mnist.validation.labels,
                     keep_prob: 1.0
                 })
                 summary_writer.add_summary(summary, step)
@@ -134,10 +120,9 @@ with tf.Graph().as_default(), tf.Session() as sess:
 
         summary_writer.close()
 
-    test_xs, test_ys = next(test_stream.get_epoch_iterator())
     test_accuracy = sess.run(accuracy, feed_dict={
-        x: test_xs,
-        y_: test_ys,
+        x: mnist.test.images,
+        y_: mnist.test.labels,
         keep_prob: 1.0
     })
     print('test accuracy %g' % test_accuracy)
