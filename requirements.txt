@@ -1,9 +1,0 @@
-Cython==0.23.4
-pyzmq==15.2.0
-protobuf==3.0.0b2
-h5py==2.5.0
-six==1.10.0
-
---allow-external fuel
---allow-unverified fuel
-git+https://github.com/mila-udem/fuel#egg=fuel
