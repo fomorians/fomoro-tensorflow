@@ -77,7 +77,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
     merged_summaries = tf.merge_all_summaries()
 
     # create a saver instance to restore from the checkpoint
-    saver = tf.train.Saver()
+    saver = tf.train.Saver(max_to_keep=1)
 
     # initialize our variables
     sess.run(tf.initialize_all_variables())
