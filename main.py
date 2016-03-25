@@ -19,8 +19,6 @@ summary_path = os.environ.get('SUMMARY_PATH', 'logs/')
 
 mnist = input_data.read_data_sets('mnist', one_hot=True)
 
-batch_size = 50
-
 def weight_variable(shape):
   return tf.Variable(tf.truncated_normal(shape, stddev=0.1))
 
@@ -96,10 +94,11 @@ with tf.Graph().as_default(), tf.Session() as sess:
 
         num_steps = 20000
         checkpoint_interval = 100
+        batch_size = 50
 
         step = 0
         for i in range(num_steps):
-            batch_xs, batch_ys = mnist.train.next_batch(50)
+            batch_xs, batch_ys = mnist.train.next_batch(batch_size)
             if step % checkpoint_interval == 0:
                 validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
                     x: mnist.validation.images,
