@@ -1,4 +1,4 @@
 name = "convnet"
 repo = "https://github.com/fomorians/fomoro-starter.git"
-description = ""
+description = "A simple convolutional neural network in TensorFlow."
 environment = "tensorflow"
