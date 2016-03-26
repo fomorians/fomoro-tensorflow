@@ -92,7 +92,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
     if not FLAGS.skip_training:
         summary_writer = tf.train.SummaryWriter(summary_path, sess.graph_def)
 
-        num_steps = 2000
+        num_steps = 1500
         checkpoint_interval = 100
         batch_size = 50
 
@@ -107,7 +107,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
                 })
                 summary_writer.add_summary(summary, step)
                 saver.save(sess, checkpoint_path + 'checkpoint', global_step=step)
-                print('step %d, training accuracy %g' % (step, validation_accuracy))
+                print('step %d/%d, training accuracy %g' % (step, num_steps, validation_accuracy))
 
             sess.run(train_step, feed_dict={
                 x: batch_xs,
