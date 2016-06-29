@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
+# from dataset import read_data_sets
 
 def weight_bias(shape):
     W = tf.Variable(tf.truncated_normal(shape, stddev=0.1))
@@ -30,7 +31,8 @@ with tf.Session() as sess:
     NUM_EPOCHS = 5
     BATCH_SIZE = 64
 
-    mnist = read_data_sets('mnist', one_hot=True)
+    dataset = read_data_sets('mnist', one_hot=True)
+    # dataset = read_data_sets('clock_dataset/data.pkl', 'https://s3.amazonaws.com/fomoro-public-datasets/clock_dataset.pkl', dataset_hash='2c53ed06fffb4655426979af44d9e957')
 
     x = tf.placeholder('float', shape=[None, 784], name='x')
     y_ = tf.placeholder('float', shape=[None, 10], name='y_')
@@ -61,10 +63,10 @@ with tf.Session() as sess:
 
     sess.run(tf.initialize_all_variables())
 
-    num_batches = mnist.train.num_examples // BATCH_SIZE
+    num_batches = dataset.train.num_examples // BATCH_SIZE
     for epoch in range(NUM_EPOCHS):
         for batch_index in tqdm(range(num_batches), total=num_batches):
-            xs, ys = mnist.train.next_batch(BATCH_SIZE)
+            xs, ys = dataset.train.next_batch(BATCH_SIZE)
             sess.run(train_step, feed_dict={
                 x: xs,
                 y_: ys,
@@ -72,15 +74,15 @@ with tf.Session() as sess:
             })
 
         loss_valid, accuracy_valid = sess.run([loss, accuracy], feed_dict={
-            x: mnist.validation.images,
-            y_: mnist.validation.labels,
+            x: dataset.validation.images,
+            y_: dataset.validation.labels,
             keep_prob: 1.0
         })
         print('[valid] loss: {}, accuracy: {} ({}/{})'.format(loss_valid, accuracy_valid, epoch + 1, NUM_EPOCHS))
 
     loss_test, accuracy_test = sess.run([loss, accuracy], feed_dict={
-        x: mnist.test.images,
-        y_: mnist.test.labels,
+        x: dataset.test.images,
+        y_: dataset.test.labels,
         keep_prob: 1.0
     })
     print('[test] loss: {}, accuracy: {}'.format(loss_test, accuracy_test))
