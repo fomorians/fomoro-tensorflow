@@ -1,127 +1,84 @@
 from __future__ import print_function
+from __future__ import division
 
-import os
+from tqdm import tqdm
+
 import tensorflow as tf
-import numpy as np
-import input_data
 
-flags = tf.app.flags
-FLAGS = flags.FLAGS
+from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
 
-# define flags (note that Fomoro will not pass any flags by default)
-flags.DEFINE_boolean('skip-training', False, 'If true, skip training the model.')
-flags.DEFINE_boolean('restore', False, 'If true, restore the model from the latest checkpoint.')
+def weight_bias(shape):
+    W = tf.Variable(tf.truncated_normal(shape, stddev=0.1))
+    b = tf.Variable(tf.constant(0.1, shape=shape[-1:]))
+    return W, b
 
-# define artifact directories where results from the session can be saved
-model_path = os.environ.get('MODEL_PATH', 'models/')
-checkpoint_path = os.environ.get('CHECKPOINT_PATH', 'checkpoints/')
-summary_path = os.environ.get('SUMMARY_PATH', 'logs/')
+def conv2d(x, kernel, output_depth):
+    input_depth = x.get_shape().as_list()[-1]
+    W, b = weight_bias(kernel + [input_depth, output_depth])
+    return tf.nn.relu(tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME') + b)
 
-mnist = input_data.read_data_sets('mnist', one_hot=True)
+def max_pool(x):
+    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-def weight_variable(shape):
-  return tf.Variable(tf.truncated_normal(shape, stddev=0.1))
+def dense(x, output_size, activation):
+    input_size = x.get_shape().as_list()[-1]
+    W, b = weight_bias([input_size, output_size])
+    return activation(tf.matmul(x, W) + b)
 
-def bias_variable(shape):
-  return tf.Variable(tf.constant(0.1, shape=shape))
+with tf.Session() as sess:
+    NUM_EPOCHS = 5
+    BATCH_SIZE = 64
 
-def conv2d(x, W):
-  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+    mnist = read_data_sets('mnist', one_hot=True)
 
-def max_pool_2x2(x):
-  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-with tf.Graph().as_default(), tf.Session() as sess:
     x = tf.placeholder('float', shape=[None, 784], name='x')
     y_ = tf.placeholder('float', shape=[None, 10], name='y_')
+    keep_prob = tf.placeholder('float', name='keep_prob')
 
-    # reshape input
     x_image = tf.reshape(x, [-1, 28, 28, 1])
 
-    # first convolutional layer
-    W_conv1 = weight_variable([5, 5, 1, 32])
-    b_conv1 = bias_variable([32])
-    h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
-    h_pool1 = max_pool_2x2(h_conv1)
+    h_conv1 = conv2d(x_image, [3, 3], 32)
+    h_pool1 = max_pool(h_conv1)
 
-    # second convolutional layer
-    W_conv2 = weight_variable([5, 5, 32, 64])
-    b_conv2 = bias_variable([64])
-    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
-    h_pool2 = max_pool_2x2(h_conv2)
+    h_conv2 = conv2d(h_pool1, [3, 3], 64)
+    h_pool2 = max_pool(h_conv2)
 
-    # fully-connected layer
-    W_fc1 = weight_variable([7 * 7 * 64, 1024])
-    b_fc1 = bias_variable([1024])
     h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
-    # dropout
-    keep_prob = tf.placeholder('float', name='keep_prob')
+    h_fc1 = dense(h_pool2_flat, 128, tf.nn.relu)
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-    # softmax output
-    W_fc2 = weight_variable([1024, 10])
-    b_fc2 = bias_variable([10])
-    y_softmax = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+    y = dense(h_fc1_drop, 10, tf.nn.softmax)
 
-    # define training and accuracy operations
-    cross_entropy = -tf.reduce_sum(y_ * tf.log(y_softmax))
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, name='train_step')
-    correct_prediction = tf.equal(tf.argmax(y_softmax, 1), tf.argmax(y_, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'), name='accuracy')
-    accuracy_summary = tf.scalar_summary('accuracy', accuracy)
+    cross_entropy = -tf.reduce_sum(y_ * tf.log(y + 1e-7), reduction_indices=[1])
+    loss = tf.reduce_mean(cross_entropy)
+    train_step = tf.train.AdamOptimizer().minimize(loss)
 
-    merged_summaries = tf.merge_all_summaries()
+    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-    # create a saver instance to restore from the checkpoint
-    saver = tf.train.Saver(max_to_keep=1)
-
-    # initialize our variables
     sess.run(tf.initialize_all_variables())
 
-    # save the graph definition as a protobuf file
-    tf.train.write_graph(sess.graph_def, model_path, 'convnet.pb', as_text=False)
-
-    # restore variables
-    if FLAGS.restore:
-        latest_checkpoint_path = tf.train.latest_checkpoint(checkpoint_path)
-        if latest_checkpoint_path:
-            saver.restore(sess, latest_checkpoint_path)
-
-    if not FLAGS.skip_training:
-        summary_writer = tf.train.SummaryWriter(summary_path, sess.graph_def)
-
-        num_steps = 15000
-        checkpoint_interval = 100
-        batch_size = 50
-
-        step = 0
-        for i in range(num_steps):
-            batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-            if step % checkpoint_interval == 0:
-                validation_accuracy, summary = sess.run([accuracy, merged_summaries], feed_dict={
-                    x: mnist.validation.images,
-                    y_: mnist.validation.labels,
-                    keep_prob: 1.0
-                })
-                summary_writer.add_summary(summary, step)
-                saver.save(sess, checkpoint_path + 'checkpoint', global_step=step)
-                print('step %d/%d, training accuracy %g' % (step, num_steps, validation_accuracy))
-
+    num_batches = mnist.train.num_examples // BATCH_SIZE
+    for epoch in range(NUM_EPOCHS):
+        for batch_index in tqdm(range(num_batches), total=num_batches):
+            xs, ys = mnist.train.next_batch(BATCH_SIZE)
             sess.run(train_step, feed_dict={
-                x: batch_xs,
-                y_: batch_ys,
+                x: xs,
+                y_: ys,
                 keep_prob: 0.5
             })
 
-            step += 1
+        loss_valid, accuracy_valid = sess.run([loss, accuracy], feed_dict={
+            x: mnist.validation.images,
+            y_: mnist.validation.labels,
+            keep_prob: 1.0
+        })
+        print('[valid] loss: {}, accuracy: {} ({}/{})'.format(loss_valid, accuracy_valid, epoch + 1, NUM_EPOCHS))
 
-        summary_writer.close()
-
-    test_accuracy = sess.run(accuracy, feed_dict={
+    loss_test, accuracy_test = sess.run([loss, accuracy], feed_dict={
         x: mnist.test.images,
         y_: mnist.test.labels,
         keep_prob: 1.0
     })
-    print('test accuracy %g' % test_accuracy)
+    print('[test] loss: {}, accuracy: {}'.format(loss_test, accuracy_test))

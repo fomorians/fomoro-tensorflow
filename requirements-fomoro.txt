@@ -1,0 +1,2 @@
+https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl
+tqdm==4.7.0
