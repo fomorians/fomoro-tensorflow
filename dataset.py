@@ -33,6 +33,7 @@ class Dataset(object):
 
     def __init__(self, images, labels):
         images = images[..., :1]
+        images = images.reshape(images.shape[0], images.shape[1] * images.shape[2])
         images = images.astype(np.float32)
         images = np.multiply(images, 1.0 / 255.0)
 

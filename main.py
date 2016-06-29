@@ -6,8 +6,8 @@ from tqdm import tqdm
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
-# from dataset import read_data_sets
+# from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
+from dataset import read_data_sets
 
 def weight_bias(shape):
     W = tf.Variable(tf.truncated_normal(shape, stddev=0.1))
@@ -31,14 +31,18 @@ with tf.Session() as sess:
     NUM_EPOCHS = 5
     BATCH_SIZE = 64
 
-    dataset = read_data_sets('mnist', one_hot=True)
-    # dataset = read_data_sets('clock_dataset/data.pkl', 'https://s3.amazonaws.com/fomoro-public-datasets/clock_dataset.pkl', dataset_hash='2c53ed06fffb4655426979af44d9e957')
+    # dataset = read_data_sets('mnist', one_hot=True)
+    dataset = read_data_sets('clock_dataset/data.pkl', 'https://s3.amazonaws.com/fomoro-public-datasets/clock_dataset.pkl', dataset_hash='2c53ed06fffb4655426979af44d9e957')
 
-    x = tf.placeholder('float', shape=[None, 784], name='x')
-    y_ = tf.placeholder('float', shape=[None, 10], name='y_')
+    input_size = dataset.train.images.shape[1]
+    output_size = dataset.train.labels.shape[1]
+    width, height = 24, 24
+
+    x = tf.placeholder('float', shape=[None, input_size], name='x')
+    y_ = tf.placeholder('float', shape=[None, output_size], name='y_')
     keep_prob = tf.placeholder('float', name='keep_prob')
 
-    x_image = tf.reshape(x, [-1, 28, 28, 1])
+    x_image = tf.reshape(x, [-1, width, height, 1])
 
     h_conv1 = conv2d(x_image, [3, 3], 32)
     h_pool1 = max_pool(h_conv1)
@@ -52,7 +56,7 @@ with tf.Session() as sess:
     h_fc1 = dense(h_pool2_flat, 128, tf.nn.relu)
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-    y = dense(h_fc1_drop, 10, tf.nn.softmax)
+    y = dense(h_fc1_drop, output_size, tf.nn.softmax)
 
     cross_entropy = -tf.reduce_sum(y_ * tf.log(y + 1e-7), reduction_indices=[1])
     loss = tf.reduce_mean(cross_entropy)
