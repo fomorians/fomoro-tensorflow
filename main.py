@@ -3,6 +3,7 @@ from __future__ import division
 
 from tqdm import tqdm
 
+import numpy as np
 import tensorflow as tf
 
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
