@@ -43,7 +43,8 @@ with tf.Session() as sess:
     h_conv2 = conv2d(h_pool1, [3, 3], 64)
     h_pool2 = max_pool(h_conv2)
 
-    h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])
+    h_pool2_shape = h_pool2.get_shape().as_list()[1:]
+    h_pool2_flat = tf.reshape(h_pool2, [-1, np.prod(h_pool2_shape)])
 
     h_fc1 = dense(h_pool2_flat, 128, tf.nn.relu)
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
