@@ -31,19 +31,18 @@ with tf.Session() as sess:
     BATCH_SIZE = 64
 
     dataset = read_data_sets('mnist', one_hot=True)
-    dataset.train._images = dataset.train.images.reshape([-1, 28, 28, 1])
-    dataset.validation._images = dataset.validation.images.reshape([-1, 28, 28, 1])
-    dataset.test._images = dataset.test.images.reshape([-1, 28, 28, 1])
 
-    print(dataset.train.images.shape)
-    _, width, height, _ = dataset.train.images.shape
+    input_size = dataset.train.images.shape[1]
     output_size = dataset.train.labels.shape[1]
+    width, height = 28, 28
 
-    x = tf.placeholder('float', shape=[None, width, height, 1], name='x')
+    x = tf.placeholder('float', shape=[None, input_size], name='x')
     y_ = tf.placeholder('float', shape=[None, output_size], name='y_')
     keep_prob = tf.placeholder('float', name='keep_prob')
 
-    h_conv1 = conv2d(x, [3, 3], 32)
+    x_image = tf.reshape(x, [-1, width, height, 1])
+
+    h_conv1 = conv2d(x_image, [3, 3], 32)
     h_pool1 = max_pool(h_conv1)
 
     h_conv2 = conv2d(h_pool1, [3, 3], 64)
