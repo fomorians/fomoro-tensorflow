@@ -79,16 +79,16 @@ class Datasets(object):
         self.validation = validation
         self.test = test
 
-def read_data_sets(dataset_destination, dataset_source, dataset_hash=None):
-    if not os.path.exists(dataset_destination):
+def read_data_sets(dataset_path, dataset_url, dataset_hash=None):
+    if not os.path.exists(dataset_path):
         print('Downloading dataset...')
-        download_file(dataset_source, dataset_destination)
+        download_file(dataset_url, dataset_path)
 
     if dataset_hash:
         print('Checking dataset hash...')
-        assert md5_hash(dataset_destination) == dataset_hash
+        assert md5_hash(dataset_path) == dataset_hash
 
-    with open(dataset_destination, 'rb') as f:
+    with open(dataset_path, 'rb') as f:
         print('Loading dataset...')
         X, yh, ym, ys = pickle.load(f)
 
