@@ -32,7 +32,7 @@ with tf.Session() as sess:
     BATCH_SIZE = 64
 
     # dataset = read_data_sets('mnist', one_hot=True)
-    dataset = read_data_sets('clock_dataset/data.pkl', 'https://s3.amazonaws.com/fomoro-public-datasets/clock_dataset.pkl', dataset_hash='2c53ed06fffb4655426979af44d9e957')
+    dataset = read_data_sets('clock_dataset.pkl', 'https://s3.amazonaws.com/fomoro-public-datasets/clock_dataset.pkl', dataset_hash='2c53ed06fffb4655426979af44d9e957')
 
     input_size = dataset.train.images.shape[1]
     output_size = dataset.train.labels.shape[1]
